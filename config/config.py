@@ -1,6 +1,5 @@
-# config.py
+# config/config.py
 from pathlib import Path
-from types import SimpleNamespace
 from dotenv import load_dotenv, find_dotenv
 import os, logging
 
@@ -18,8 +17,8 @@ def env(name, default=None, *, required=False, cast=str):
         return int(v)
     return v  
 
-
-LOG_DIR = env("LOG_DIR", "/root/myapp/logs/")
+DATABASE_URL = env("DATABASE_URL", required=True)
+LOG_DIR = env("LOG_DIR", "")
 LOG_NAME = env("LOG_NAME", "logs.log")
 log_file_path = os.path.join(LOG_DIR, LOG_NAME)
 os.makedirs(LOG_DIR, exist_ok=True)
