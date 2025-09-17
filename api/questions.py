@@ -5,11 +5,13 @@ from datetime import datetime
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from database.models import Question as QuestionModel
 from database.database import get_db
+
+from config.config import QUESTION_TEXT_MAX 
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -18,6 +20,15 @@ router = APIRouter()
 class QuestionCreate(BaseModel):
     text: str
 
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("text cannot be empty")
+        if len(v) > QUESTION_TEXT_MAX:
+            raise ValueError(f"text must be at most {QUESTION_TEXT_MAX} characters")
+        return v
 
 class QuestionRead(BaseModel):
     id: int
@@ -53,7 +64,7 @@ def create_question(payload: QuestionCreate, db: Session = Depends(get_db)) -> Q
     POST /questions
     Question creation.
     """
-    if not payload.text:
+    if not payload.text or not payload.text.strip():
         raise HTTPException(status_code=422, detail="Empty question empty")
 
     question = QuestionModel(text=payload.text.strip())

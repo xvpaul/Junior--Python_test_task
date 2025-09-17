@@ -29,3 +29,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     force=True,
 )
+
+QUESTION_TEXT_MAX = 1000
+ANSWER_TEXT_MAX = 10000

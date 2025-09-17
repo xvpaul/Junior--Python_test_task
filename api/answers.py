@@ -4,11 +4,13 @@ import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.orm import Session
 
 from database.models import Question, Answer as AnswerModel
 from database.database import get_db
+
+from config.config import ANSWER_TEXT_MAX
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,6 +19,16 @@ router = APIRouter()
 class AnswerCreate(BaseModel):
     user_id: int
     text: str
+
+    @field_validator("text")
+    @classmethod
+    def validate_text(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("text cannot be empty")
+        if len(v) > ANSWER_TEXT_MAX:
+            raise ValueError(f"text must be at most {ANSWER_TEXT_MAX} characters")
+        return v
 
 
 class AnswerRead(BaseModel):
