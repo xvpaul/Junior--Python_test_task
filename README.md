@@ -20,7 +20,6 @@
 │   ├── database_init.py
 │   └── models.py
 ├── docker-compose.yml
-├── logs.log
 ├── main.py
 ├── migrations
 │   └── env.py
