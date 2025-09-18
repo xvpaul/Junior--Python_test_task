@@ -54,6 +54,7 @@ git clone https://github.com/xvpaul/Junior--Python_test_task.git
 Создание `config/.env`. В корне репозитория выполнить:
 
 ```bash
+cd Junior--Python_test_task/
 mkdir -p config
 cat > config/.env <<'EOF'
 DATABASE_URL=postgresql+psycopg://postgres:postgres@db:5432/postgres 
