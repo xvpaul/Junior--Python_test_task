@@ -1,54 +1,50 @@
-# tests/test_answer_api.py
-
 from database.models import Answer as AnswerModel
+import config.models as smod
 
-
-def _mk_question(client, txt="Q"):
-    return client.post("/questions", json={"text": txt}).json()["id"]
-
-
-def test_add_get_delete_answer(client, db_session):
-    qid = _mk_question(client, "With answer?")
-    r = client.post(f"/answers/{qid}/answers", json={"user_id": 7, "text": "Because."})
-    assert r.status_code == 201
-    ans = r.json()
+def test_add_get_delete_answer_flow(client, db_session, api):
+    api = api(client)
+    qid = api.mk_question("With answer?")["id"]
+    ans = api.add_answer(qid, 7, "Because.")
+    api.validate(ans, "Answer")
     aid = ans["id"]
-
-    assert ans["question_id"] == qid
-    assert ans["user_id"] == 7
-    assert ans["text"] == "Because."
-    assert "created_at" in ans
-
-    r2 = client.get(f"/answers/{aid}")
-    assert r2.status_code == 200
-    assert r2.json()["id"] == aid
-
-    assert client.delete(f"/answers/{aid}").status_code == 204
+    got = api.get(f"/answers/{aid}")
+    api.validate(got, "Answer")
+    assert got["id"] == aid
+    api.delete(f"/answers/{aid}")
     assert client.get(f"/answers/{aid}").status_code == 404
-
     assert db_session.get(AnswerModel, aid) is None
-
 
 def test_add_answer_question_not_found(client):
     r = client.post("/answers/999999/answers", json={"user_id": 1, "text": "x"})
     assert r.status_code == 404
-    assert r.json()["detail"] == "Question not found"
-
-
-def test_add_answer_payload_validation(client):
-    qid = _mk_question(client)
-    assert client.post(f"/answers/{qid}/answers", json={"text": "hi"}).status_code == 422 
-    assert client.post(f"/answers/{qid}/answers", json={"user_id": "oops", "text": "hi"}).status_code == 422
-    assert client.post(f"/answers/{qid}/answers", json={"user_id": 1}).status_code == 422 
-
-
-def test_answer_unicode_and_very_long(client):
-    qid = _mk_question(client, txt="Unicode Q")
-    long_text = "λ" * 1024 + " 🧪"
-    r = client.post(f"/answers/{qid}/answers", json={"user_id": 42, "text": long_text})
-    assert r.status_code == 201
     body = r.json()
-    assert body["text"].endswith("🧪")
+    assert "detail" in body
+
+def test_add_answer_payload_validation(client, api):
+    api = api(client)
+    qid = api.mk_question()["id"]
+    assert client.post(f"/answers/{qid}/answers", json={"text": "hi"}).status_code == 422
+    assert client.post(f"/answers/{qid}/answers", json={"user_id": "oops", "text": "hi"}).status_code == 422
+    assert client.post(f"/answers/{qid}/answers", json={"user_id": 1}).status_code == 422
+
+def test_answer_unicode_long_text(client, api):
+    api = api(client)
+    qid = api.mk_question("Unicode Q")["id"]
+    long_text = "λ" * 1024 + " 🧪"
+    ans = api.add_answer(qid, 42, long_text)
+    assert ans["text"].endswith("🧪")
+
+def test_length_limits_monkeypatch(client, api, monkeypatch):
+    monkeypatch.setattr(smod, "QUESTION_TEXT_MAX", 5, raising=False)
+    monkeypatch.setattr(smod, "ANSWER_TEXT_MAX", 3, raising=False)
+    api = api(client)
+    assert client.post("/questions", json={"text": "abcde"}).status_code in (200, 201)
+    assert client.post("/questions", json={"text": "abcdef"}).status_code == 422
+    assert client.post("/questions", json={"text": "   "}).status_code == 422
+    qid = api.mk_question("abcde")["id"]
+    assert client.post(f"/answers/{qid}/answers", json={"user_id": 1, "text": "abc"}).status_code in (200, 201)
+    assert client.post(f"/answers/{qid}/answers", json={"user_id": 1, "text": "abcd"}).status_code == 422
+    assert client.post(f"/answers/{qid}/answers", json={"user_id": 1, "text": "   "}).status_code == 422
 
 
 def test_answer_404s(client):

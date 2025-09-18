@@ -1,7 +1,6 @@
 from logging.config import fileConfig
 from alembic import context
 from database.database import Base
-import database.models  
 
 config = context.config
 if config.config_file_name:

@@ -2,7 +2,7 @@
 Выполненное тестовое задание
 
 
-## 🗂️ Структура
+## Структура
 
 ```
 .
@@ -12,8 +12,10 @@
 │   ├── answers.py
 │   └── questions.py
 ├── config
-│   └── config.py
+│   ├── config.py
+│   └── models.py
 ├── database
+│   ├── __init__.py
 │   ├── database.py
 │   ├── database_init.py
 │   └── models.py
@@ -26,9 +28,7 @@
 └── tests
     ├── conftest.py
     ├── test_answers_api.py
-    ├── test_question_api.py
-    └── test_validation.py
-
+    └── test_question_api.py
 ```
 
 ---
@@ -46,12 +46,12 @@
 ### 1) Склонировать репозиторий
 
 ```bash
-git clone https://github.com/xvpaul/Junior--Python_test_task
+git clone https://github.com/xvpaul/Junior--Python_test_task.git
 ```
 
 ### 2) Настроить .env
 
-Создание `config/.env`.
+Создание `config/.env`. В корне репозитория выполнить:
 
 ```bash
 mkdir -p config
@@ -68,6 +68,11 @@ EOF
 docker compose up --build
 ```
 
+Перейти на:
+
+```
+http://127.0.0.1:8000
+```
 
 # Тесты
 
@@ -80,5 +85,4 @@ docker compose run --rm app pytest -q
 
 ```bash
 docker compose down                      
-docker compose run --rm app pytest -q
 ```

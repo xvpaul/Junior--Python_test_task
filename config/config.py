@@ -1,6 +1,8 @@
 # config/config.py
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
+from functools import wraps
+from time import perf_counter
 import os, logging
 
 load_dotenv(find_dotenv(filename=".env"), override=False)
@@ -32,3 +34,23 @@ logging.basicConfig(
 
 QUESTION_TEXT_MAX = 1000
 ANSWER_TEXT_MAX = 10000
+
+def log_call(name: str | None = None):
+
+    def deco(fn):
+        label = name or fn.__name__
+
+        @wraps(fn)
+        def wrapper(*args, **kwargs):
+            lg = logging.getLogger(fn.__module__)
+            start = perf_counter()
+            lg.info("%s start", label)
+            try:
+                result = fn(*args, **kwargs)
+                lg.info("%s done in %.1f ms", label, (perf_counter() - start) * 1000)
+                return result
+            except Exception:
+                lg.exception("%s failed after %.1f ms", label, (perf_counter() - start) * 1000)
+                raise
+        return wrapper
+    return deco
